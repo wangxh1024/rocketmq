@@ -47,6 +47,9 @@ public class ServerUtil {
         CommandLine commandLine = null;
         try {
             commandLine = parser.parse(options, args);
+            /**
+             * 如果参数中传入-h 则打印帮助信息
+             */
             if (commandLine.hasOption('h')) {
                 hf.printHelp(appName, options, true);
                 System.exit(0);

@@ -68,6 +68,11 @@ public class NamesrvStartup {
         return null;
     }
 
+    /**
+     * 主要做两件事情
+     * 1，加载配置信息
+     * 2，创建NamesrvController
+     */
     public static NamesrvController createNamesrvController(String[] args) throws IOException, JoranException {
         System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
         //PackageConflictDetect.detectFastjson();
@@ -79,9 +84,21 @@ public class NamesrvStartup {
             return null;
         }
 
+        /**
+         * namesrv业务配置信息
+         */
         final NamesrvConfig namesrvConfig = new NamesrvConfig();
+        /**
+         * namesrv网络配置信息
+         */
         final NettyServerConfig nettyServerConfig = new NettyServerConfig();
+        /**
+         * 设置默认的监听端口号为9876
+         */
         nettyServerConfig.setListenPort(9876);
+        /**
+         * 如果命令行中通过-c将配置文件信息传入进来，则进行解析文件
+         */
         if (commandLine.hasOption('c')) {
             String file = commandLine.getOptionValue('c');
             if (file != null) {
@@ -98,6 +115,9 @@ public class NamesrvStartup {
             }
         }
 
+        /**
+         * 如果参数中传入-p则在控制台打印配置详细信息
+         */
         if (commandLine.hasOption('p')) {
             InternalLogger console = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_CONSOLE_NAME);
             MixAll.printObjectProperties(console, namesrvConfig);
@@ -126,6 +146,9 @@ public class NamesrvStartup {
         final NamesrvController controller = new NamesrvController(namesrvConfig, nettyServerConfig);
 
         // remember all configs to prevent discard
+        /**
+         * 将properties对应的所有配置信息存储到configuration中
+         */
         controller.getConfiguration().registerConfig(properties);
 
         return controller;
@@ -137,12 +160,20 @@ public class NamesrvStartup {
             throw new IllegalArgumentException("NamesrvController is null");
         }
 
+        /**
+         * 1，初始化线程池
+         * 2，注册processor
+         * 3，启动定时任务，定时扫描失效的broker
+         */
         boolean initResult = controller.initialize();
         if (!initResult) {
             controller.shutdown();
             System.exit(-3);
         }
 
+        /**
+         * 钩子函数当nameserver正常关闭时，会触发该钩子函数，回收相应的线程资源
+         */
         Runtime.getRuntime().addShutdownHook(new ShutdownHookThread(log, new Callable<Void>() {
             @Override
             public Void call() throws Exception {
@@ -160,7 +191,17 @@ public class NamesrvStartup {
         controller.shutdown();
     }
 
+    /**
+     * 构建Options
+     */
     public static Options buildCommandlineOptions(final Options options) {
+        /**
+         * Option 主要是对命令行参数的抽象
+         * 1，参数简称
+         * 2，参数全拼
+         * 3，是否需要额外参数
+         * 4，参数描述
+         */
         Option opt = new Option("c", "configFile", true, "Name server config properties file");
         opt.setRequired(false);
         options.addOption(opt);

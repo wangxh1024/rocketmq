@@ -17,16 +17,46 @@
 package org.apache.rocketmq.remoting.netty;
 
 public class NettyServerConfig implements Cloneable {
+    /**
+     * 默认监听的端口， 默认会被初始化为9876
+     */
     private int listenPort = 8888;
+    /**
+     * netty业务线程数
+     */
     private int serverWorkerThreads = 8;
+    /**
+     * 消息public线程池，nameserver一般会为消息发送，消息消费，心跳单独有自己的线程池，如果业务类型没有对应的线程池注册，则使用该线程池
+     */
     private int serverCallbackExecutorThreads = 0;
+    /**
+     * 该线程池主要是接受网络请求，处理请求报文，转发请求报文到各个业务线程池
+     */
     private int serverSelectorThreads = 3;
+    /**
+     * 消息请求并发度（broker）
+     */
     private int serverOnewaySemaphoreValue = 256;
+    /**
+     * 异步消息发送最大并行度（broker）
+     */
     private int serverAsyncSemaphoreValue = 64;
+    /**
+     * 网络连接最大空闲时间
+     */
     private int serverChannelMaxIdleTimeSeconds = 120;
 
+    /**
+     * 网络socket发送缓存区
+     */
     private int serverSocketSndBufSize = NettySystemConfig.socketSndbufSize;
+    /**
+     * 网络socket接受缓冲区
+     */
     private int serverSocketRcvBufSize = NettySystemConfig.socketRcvbufSize;
+    /**
+     * ByteBuffer是否开启缓存
+     */
     private boolean serverPooledByteBufAllocatorEnable = true;
 
     /**
@@ -35,6 +65,7 @@ public class NettyServerConfig implements Cloneable {
      *
      * ../glibc-2.10.1/configure \ --prefix=/usr \ --with-headers=/usr/include \
      * --host=x86_64-linux-gnu \ --build=x86_64-pc-linux-gnu \ --without-gd
+     * 是否启用Epoll IO模型
      */
     private boolean useEpollNativeSelector = false;
 

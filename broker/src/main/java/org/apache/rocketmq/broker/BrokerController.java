@@ -887,6 +887,10 @@ public class BrokerController {
             this.registerBrokerAll(true, false, true);
         }
 
+        /**
+         * 每隔30秒向集群中所有的NameServer发送心跳包， 然后更新NameServer中的brokerLiveInfo时间戳列表，
+         * NameServer也会每隔10秒去扫描和列表中在120s之内没有心跳的brokerAddress， 移除该broker并关闭Socket
+         */
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override

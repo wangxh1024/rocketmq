@@ -66,24 +66,57 @@ public class NamesrvController {
         this.kvConfigManager = new KVConfigManager(this);
         this.routeInfoManager = new RouteInfoManager();
         this.brokerHousekeepingService = new BrokerHousekeepingService(this);
+        /**
+         * 将namesrvConfig和nettyServerConfig的配置信息都存储到configuration中
+         */
         this.configuration = new Configuration(
             log,
             this.namesrvConfig, this.nettyServerConfig
         );
+        /**
+         * 主要是为了获取configStorePath这个属性对应的Field对象
+         */
         this.configuration.setStorePathFromConfig(this.namesrvConfig, "configStorePath");
     }
 
     public boolean initialize() {
 
+        /**
+         * 根据NameServerConfig配置的kvConfigPath路径加载配置文件信息到kvConfigManager中
+         * kvConfigPath = E:\\rocketmq\\namesrv\\kvConfig.json
+         */
         this.kvConfigManager.load();
 
+        /**
+         *  NettyRemotingAbstract
+         *  ----this.semaphoreOneway = new Semaphore(permitsOneway, true); 请求并发数
+         *  ----this.semaphoreAsync = new Semaphore(permitsAsync, true);   异步请求并发数
+         *  this.serverBootstrap = new ServerBootstrap();
+         *  this.nettyServerConfig = nettyServerConfig;
+         *  this.channelEventListener = channelEventListener;
+         *  this.publicExecutor
+         *  this.eventLoopGroupBoss
+         *  this.eventLoopGroupSelector
+         *  loadSslContext();
+         */
         this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.brokerHousekeepingService);
 
+        /**
+         * 创建netty业务线程池
+         */
         this.remotingExecutor =
             Executors.newFixedThreadPool(nettyServerConfig.getServerWorkerThreads(), new ThreadFactoryImpl("RemotingExecutorThread_"));
 
+
+        /**
+         * remotingServer.defaultRequestProcessor
+         * 将DefaultRequestProcessor和remotingExecutor注册到defaultRequestProcessor上
+         */
         this.registerProcessor();
 
+        /**
+         * 启动定时任务，每隔10s扫描一下brokerLiveTable列表中的broker是否有超过120s没有发送心跳包的
+         */
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
@@ -92,6 +125,9 @@ public class NamesrvController {
             }
         }, 5, 10, TimeUnit.SECONDS);
 
+        /**
+         * 每隔10分钟打印kv配置的属性信息
+         */
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
