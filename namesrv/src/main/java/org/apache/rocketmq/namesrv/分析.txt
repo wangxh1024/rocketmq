@@ -1,0 +1,50 @@
+NamesrvStartup.main0()
+    1，new NamesrvController(namesrvConfig, nettyServerConfig)
+    ---->private final NamesrvConfig namesrvConfig;
+    ---->private final NettyServerConfig nettyServerConfig;
+    ---->private final KVConfigManager kvConfigManager = new KVConfigManager(this);
+    ---->private final RouteInfoManager routeInfoManager;
+    ---->private Configuration configuration;
+    ---->this.brokerHousekeepingService = new BrokerHousekeepingService(this);
+    2，controller.initialize();
+    ---->this.kvConfigManager.load();
+    -------->this.namesrvController.getNamesrvConfig().getKvConfigPath()
+    ---->this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.brokerHousekeepingService)  extend NettyRemotingAbstract;
+    -------->NettyRemotingAbstract.protected final NettyEventExecutor nettyEventExecutor = new NettyEventExecutor();
+    -------->private final Timer timer = new Timer("ServerHouseKeepingService", true);
+    -------->this.serverBootstrap = new ServerBootstrap();
+    -------->this.nettyServerConfig = nettyServerConfig;
+    -------->this.channelEventListener = brokerHousekeepingService;
+    -------->this.publicExecutor = Executors.newFixedThreadPool(publicThreadNums(不设置默认为4))
+    -------->this.eventLoopGroupBoss(1)
+    -------->this.eventLoopGroupSelector(serverSelectorThreads)
+    ---->this.remotingExecutor = Executors.newFixedThreadPool(nettyServerConfig.getServerWorkerThreads(), new ThreadFactoryImpl("RemotingExecutorThread_"));  该线程池主要是用来处理broker，cliend等过来的请求业务
+    ---->this.registerProcessor();
+        ---->this.remotingServer.registerDefaultProcessor(new DefaultRequestProcessor(this), this.remotingExecutor);
+        -------->this.defaultRequestProcessor = new Pair<NettyRequestProcessor, ExecutorService>(processor, executor);
+    ---->this.scheduledExecutorService.scheduleAtFixedRate(task);  每隔10s执行一次NamesrvController.this.routeInfoManager.scanNotActiveBroker(); 用来清除超过120s内broker没有心跳的节点
+    3，controller.start();
+    ---->this.remotingServer.start();
+    -------->this.defaultEventExecutorGroup = new DefaultEventExecutorGroup(serverWorkerThreads,NettyServerCodecThread_);
+    -------->prepareSharableHandlers();
+            handshakeHandler = new HandshakeHandler(TlsSystemConfig.tlsMode);
+            encoder = new NettyEncoder();
+            connectionManageHandler = new NettyConnectManageHandler();
+            ---->channelActive(ChannelHandlerContext ctx)
+                ---->NettyRemotingServer.this.putNettyEvent(new NettyEvent(NettyEventType.CONNECT, remoteAddress, ctx.channel()));
+            ---->channelInactive(ChannelHandlerContext ctx)
+                ---->NettyRemotingServer.this.putNettyEvent(new NettyEvent(NettyEventType.CLOSE, remoteAddress, ctx.channel()));
+            ---->userEventTriggered(ChannelHandlerContext ctx, Object evt);
+                ---->NettyRemotingServer.this.putNettyEvent(new NettyEvent(NettyEventType.IDLE, remoteAddress, ctx.channel()));
+            ---->exceptionCaught(ChannelHandlerContext ctx, Throwable cause);
+                ---->NettyRemotingServer.this.putNettyEvent(new NettyEvent(NettyEventType.EXCEPTION, remoteAddress, ctx.channel()));
+            serverHandler = new NettyServerHandler();
+            ----->processRequestCommand(ctx, cmd);
+            ----->processResponseCommand(ctx, cmd);
+    -------->ServerBootstrap childHandler = this.serverBootstrap.group(this.eventLoopGroupBoss, this.eventLoopGroupSelector).bind().sync()  会将prepareSharableHandlers准备的handler绑定到pipeline中
+    -------->this.nettyEventExecutor.start(); 单独开启一个线程主要是为了处理broker的IDLE, CONNECT, CLOSE, EXCEPTION这些事件
+    ------------->NettyEventExecutor extends ServiceThread -----> implements Runnable
+    ----------------->private final LinkedBlockingQueue<NettyEvent> eventQueue = new LinkedBlockingQueue<NettyEvent>();
+    ----------------->while(true)
+    --------------------->final ChannelEventListener listener = NettyRemotingAbstract.this.getChannelEventListener();  根据事件类型（IDLE, CONNECT, CLOSE, EXCEPTION）做相应的处理
+    -------->this.timer.scheduleAtFixedRate(task, 1000 * 3, 1000) 每隔1s执行一次NettyRemotingServer.this.scanResponseTable();

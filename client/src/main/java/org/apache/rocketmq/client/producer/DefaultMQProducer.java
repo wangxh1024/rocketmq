@@ -317,8 +317,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
      * @throws InterruptedException if the sending thread is interrupted.
      */
     @Override
-    public SendResult send(
-        Message msg) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
+    public SendResult send(Message msg) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         Validators.checkMessage(msg, this);
         msg.setTopic(withNamespace(msg.getTopic()));
         return this.defaultMQProducerImpl.send(msg);
@@ -893,8 +892,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
     }
 
     @Override
-    public SendResult send(
-        Collection<Message> msgs) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
+    public SendResult send(Collection<Message> msgs) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         return this.defaultMQProducerImpl.send(batch(msgs));
     }
 

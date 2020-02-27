@@ -1347,8 +1347,7 @@ public class MQClientAPIImpl {
         throw new MQBrokerException(response.getCode(), response.getRemark());
     }
 
-    public TopicRouteData getDefaultTopicRouteInfoFromNameServer(final String topic, final long timeoutMillis)
-        throws RemotingException, MQClientException, InterruptedException {
+    public TopicRouteData getDefaultTopicRouteInfoFromNameServer(final String topic, final long timeoutMillis) throws RemotingException, MQClientException, InterruptedException {
 
         return getTopicRouteInfoFromNameServer(topic, timeoutMillis, false);
     }
@@ -1359,8 +1358,14 @@ public class MQClientAPIImpl {
         return getTopicRouteInfoFromNameServer(topic, timeoutMillis, true);
     }
 
-    public TopicRouteData getTopicRouteInfoFromNameServer(final String topic, final long timeoutMillis,
-        boolean allowTopicNotExist) throws MQClientException, InterruptedException, RemotingTimeoutException, RemotingSendRequestException, RemotingConnectException {
+    /**
+     *
+     * @param topic 要获取的主题
+     * @param timeoutMillis 请求超时时间
+     * @param allowTopicNotExist
+     * @return
+     */
+    public TopicRouteData getTopicRouteInfoFromNameServer(final String topic, final long timeoutMillis, boolean allowTopicNotExist) throws MQClientException, InterruptedException, RemotingTimeoutException, RemotingSendRequestException, RemotingConnectException {
         GetRouteInfoRequestHeader requestHeader = new GetRouteInfoRequestHeader();
         requestHeader.setTopic(topic);
 

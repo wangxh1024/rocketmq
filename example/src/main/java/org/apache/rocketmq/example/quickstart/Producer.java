@@ -22,6 +22,8 @@ import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 
+import java.util.ArrayList;
+
 /**
  * This class demonstrates how to send messages to brokers using provided {@link DefaultMQProducer}.
  */
@@ -52,7 +54,7 @@ public class Producer {
          */
         producer.start();
 
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 1; i++) {
             try {
 
                 /*
@@ -67,6 +69,8 @@ public class Producer {
                  * Call send message to deliver message to one of brokers.
                  */
                 SendResult sendResult = producer.send(msg);
+
+                producer.send(new ArrayList<>());
 
                 System.out.printf("%s%n", sendResult);
             } catch (Exception e) {

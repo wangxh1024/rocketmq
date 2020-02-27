@@ -269,6 +269,9 @@ public class MQClientInstance {
             }, 1000 * 10, 1000 * 60 * 2, TimeUnit.MILLISECONDS);
         }
 
+        /**
+         * 开启定时任务每隔30s 去NameServer中请求一次更新topic路由信息
+         */
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
@@ -281,6 +284,9 @@ public class MQClientInstance {
             }
         }, 10, this.clientConfig.getPollNameServerInterval(), TimeUnit.MILLISECONDS);
 
+        /**
+         * 每隔30s发送一次心跳
+         */
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
@@ -344,6 +350,7 @@ public class MQClientInstance {
         }
 
         // Producer
+        // 扫描topicPublishInfoTable这个map集合，获取到topic，然后向NameServer中获取该Topic
         {
             Iterator<Entry<String, MQProducerInner>> it = this.producerTable.entrySet().iterator();
             while (it.hasNext()) {
@@ -604,8 +611,7 @@ public class MQClientInstance {
         }
     }
 
-    public boolean updateTopicRouteInfoFromNameServer(final String topic, boolean isDefault,
-        DefaultMQProducer defaultMQProducer) {
+    public boolean updateTopicRouteInfoFromNameServer(final String topic, boolean isDefault, DefaultMQProducer defaultMQProducer) {
         try {
             if (this.lockNamesrv.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
                 try {

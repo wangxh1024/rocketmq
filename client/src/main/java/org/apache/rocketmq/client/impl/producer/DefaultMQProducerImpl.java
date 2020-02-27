@@ -196,7 +196,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                         null);
                 }
 
-                this.topicPublishInfoTable.put(this.defaultMQProducer.getCreateTopicKey(), new TopicPublishInfo());
+                    this.topicPublishInfoTable.put(this.defaultMQProducer.getCreateTopicKey(), new TopicPublishInfo());
 
                 if (startFactory) {
                     mQClientFactory.start();
@@ -541,18 +541,14 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
     }
 
-    private SendResult sendDefaultImpl(
-        Message msg,
-        final CommunicationMode communicationMode,
-        final SendCallback sendCallback,
-        final long timeout
-    ) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
+    private SendResult sendDefaultImpl(Message msg, final CommunicationMode communicationMode, final SendCallback sendCallback, final long timeout) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         this.makeSureStateOK();
         Validators.checkMessage(msg, this.defaultMQProducer);
         final long invokeID = random.nextLong();
         long beginTimestampFirst = System.currentTimeMillis();
         long beginTimestampPrev = beginTimestampFirst;
         long endTimestamp = beginTimestampFirst;
+        // 获取topic信息
         TopicPublishInfo topicPublishInfo = this.tryToFindTopicPublishInfo(msg.getTopic());
         if (topicPublishInfo != null && topicPublishInfo.ok()) {
             boolean callTimeout = false;
@@ -686,7 +682,9 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     }
 
     private TopicPublishInfo tryToFindTopicPublishInfo(final String topic) {
+        // 从缓存中获取topic路由信息
         TopicPublishInfo topicPublishInfo = this.topicPublishInfoTable.get(topic);
+        // 如果缓存中不存在，则去NameServer中拉取该Topic信息
         if (null == topicPublishInfo || !topicPublishInfo.ok()) {
             this.topicPublishInfoTable.putIfAbsent(topic, new TopicPublishInfo());
             this.mQClientFactory.updateTopicRouteInfoFromNameServer(topic);
@@ -1283,8 +1281,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     /**
      * DEFAULT SYNC -------------------------------------------------------
      */
-    public SendResult send(
-        Message msg) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
+    public SendResult send(Message msg) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         return send(msg, this.defaultMQProducer.getSendMsgTimeout());
     }
 
@@ -1337,8 +1334,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         this.asyncSenderExecutor = asyncSenderExecutor;
     }
 
-    public SendResult send(Message msg,
-        long timeout) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
+    public SendResult send(Message msg, long timeout) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         return this.sendDefaultImpl(msg, CommunicationMode.SYNC, null, timeout);
     }
 

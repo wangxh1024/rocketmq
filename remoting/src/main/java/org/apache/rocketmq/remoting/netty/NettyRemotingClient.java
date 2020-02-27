@@ -77,6 +77,9 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
     private final Bootstrap bootstrap = new Bootstrap();
     private final EventLoopGroup eventLoopGroupWorker;
     private final Lock lockChannelTables = new ReentrantLock();
+    /**
+     * 存放了所有的和NameServer相关的Channel
+     */
     private final ConcurrentMap<String /* addr */, ChannelWrapper> channelTables = new ConcurrentHashMap<String, ChannelWrapper>();
 
     private final Timer timer = new Timer("ClientHouseKeepingService", true);
@@ -147,6 +150,11 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
         return Math.abs(r.nextInt() % 999) % 999;
     }
 
+    /**
+     * 主要是做两件事情
+     * 1，启动netty服务
+     * 2，开启一个定时任务，每隔3s扫描一下响应集合中是否有超市的请求，移除掉，并执行回调
+     */
     @Override
     public void start() {
         this.defaultEventExecutorGroup = new DefaultEventExecutorGroup(
@@ -359,8 +367,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
     }
 
     @Override
-    public RemotingCommand invokeSync(String addr, final RemotingCommand request, long timeoutMillis)
-        throws InterruptedException, RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException {
+    public RemotingCommand invokeSync(String addr, final RemotingCommand request, long timeoutMillis) throws InterruptedException, RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException {
         long beginStartTime = System.currentTimeMillis();
         final Channel channel = this.getAndCreateChannel(addr);
         if (channel != null && channel.isActive()) {
